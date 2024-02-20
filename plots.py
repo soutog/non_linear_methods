@@ -32,3 +32,26 @@ def plot_gd_himmelblau(trajectory, x):
     plt.colorbar()
     plt.grid(True)
     plt.show()
+
+
+def plot_gd_rosen(trajectory, x, X, Y, Z):
+
+    # Plotting the trajectory
+    plt.figure(figsize=(8, 6))
+    plt.contourf(X, Y, Z, levels=20, cmap="jet")
+    plt.plot(
+        trajectory[:, 0],
+        trajectory[:, 1],
+        marker="o",
+        color="white",  
+        markersize=5,
+        label="Trajectory",
+    )
+    plt.scatter(x[0], x[1], color="red", label="Minimum")
+    plt.xlabel("X")
+    plt.ylabel("Y")
+    plt.title("Gradient Descent Trajectory - Himmelblau")
+    plt.legend()
+    plt.colorbar()
+    plt.grid(True)
+    plt.show()

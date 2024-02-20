@@ -1,10 +1,32 @@
 import time
 import numdifftools as nd
 import numpy as np
-from plots import plot_gd_himmelblau
+from plots import plot_gd_himmelblau, plot_gd_rosen
 
 
-def gradient_descent(df, x, learning_rate=0.01, epsilon=1e-6, max_iter=1000):
+def armijo(func, grad_func, x, dx, alpha=1.0, beta=0.5, c=0.1):
+    """
+    Armijo line search algorithm for finding a step size satisfying
+    sufficient decrease condition.
+
+    Parameters:
+        func (callable): Objective function.
+        grad_func (callable): Gradient of the objective function.
+        x (array_like): Current point.
+        dx (array_like): Search direction.
+        alpha (float): Initial step size.
+        beta (float): Fraction by which step size is reduced.
+        c (float): Constant for sufficient decrease condition.
+
+    Returns:
+        float: Step size satisfying Armijo condition.
+    """
+    while func(x + alpha * dx) > func(x) + c * alpha * grad_func(x).dot(dx):
+        alpha *= beta
+    return alpha
+
+
+def gradient_descent(f, df, x, learning_rate=0.01, epsilon=1e-6, max_iter=100000):
     """
     Gradient Descent Optimization for a Univariate Function
 
@@ -26,7 +48,8 @@ def gradient_descent(df, x, learning_rate=0.01, epsilon=1e-6, max_iter=1000):
     for i in range(max_iter):
         gradient = df([x])
 
-        x_new = x + learning_rate * gradient
+        learning_rate = armijo(f, gradient, x, learning_rate)
+        x_new = x - learning_rate * gradient
 
         if (abs(x_new - x) < 1e-06).all():
             break
@@ -64,29 +87,30 @@ def himmelblau(x):
 
 if __name__ == "__main__":
 
-    print("\n======================================")
-    print("GRADIENT DESCENT - Himmelblau")
+    # print("\n======================================")
+    # print("GRADIENT DESCENT - Himmelblau")
 
-    begin_time = time.time()
-    # generate gradient vector
-    himmelblau_gradient = nd.Gradient(himmelblau)
+    # begin_time = time.time()
+    # # generate gradient vector
+    # himmelblau_gradient = nd.Gradient(himmelblau)
 
-    # Initial guess
-    x = [0.0, 0.0]
+    # # Initial guess
+    # x = [0.0, 0.0]
 
-    # Run gradient descent optimization
-    x, iteration, trajectory = gradient_descent(himmelblau_gradient, x)
-    min_value = himmelblau(x)
+    # # Run gradient descent optimization
+    # x, iteration, trajectory = gradient_descent(himmelblau, himmelblau_gradient, x)
+    # min_value = himmelblau(x)
+    # print(himmelblau_gradient([x]))
 
-    end_time = time.time()
+    # end_time = time.time()
 
-    print(f"{iteration} iterations")
-    print("Minimizer:", x)
-    print("Minimum value:", min_value)
-    print(f"Total Time Gradient Descent: {end_time-begin_time}")
-    print(f"Average Iteration Time Gradient Descent: {(end_time-begin_time)/iteration}")
+    # print(f"{iteration} iterations")
+    # print("Minimizer:", x)
+    # print("Minimum value:", min_value)
+    # print(f"Total Time Gradient Descent: {end_time-begin_time}")
+    # print(f"Average Iteration Time Gradient Descent: {(end_time-begin_time)/iteration}")
 
-    # plot_gd_himmelblau(trajectory, x)
+    # # plot_gd_himmelblau(trajectory, x)
 
     print("\n======================================")
     print("GRADIENT DESCENT - Rosenbrock")
@@ -99,8 +123,8 @@ if __name__ == "__main__":
     x = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
     # Run gradient descent optimization
-    x, iteration, trajectory = gradient_descent(rosenbrock_gradient, x)
-    min_value = rosenbrock_gradient(x)
+    x, iteration, trajectory = gradient_descent(rosenbrock, rosenbrock_gradient, x, learning_rate=0.001)
+    min_value = rosenbrock(x)
 
     end_time = time.time()
 
@@ -110,4 +134,9 @@ if __name__ == "__main__":
     print(f"Total Time Gradient Descent: {end_time-begin_time}")
     print(f"Average Iteration Time Gradient Descent: {(end_time-begin_time)/iteration}")
 
-    # plot_gd_himmelblau(trajectory, x)
+    x = np.linspace(-2, 2, 100)
+    y = np.linspace(-2, 2, 100)
+    X, Y = np.meshgrid(x, y)
+
+    Z = rosenbrock([X, Y])
+    plot_gd_rosen(trajectory, x, X, Y, Z)
