@@ -4,29 +4,52 @@ import numpy as np
 from plots import plot_gd_himmelblau, plot_gd_rosen
 
 
-def armijo(func, grad_func, x, dx, alpha=1.0, beta=0.5, c=0.1):
+def Armijo_Search(f, xk, dk, sigma=0.02, gamma=0.5):
     """
-    Armijo line search algorithm for finding a step size satisfying
-    sufficient decrease condition.
+    Busca linear com Condição de Armijo (1° Condição de Wolfe) - Desigualdade 1, que consiste em fazer um decréscimo da f proporcional ao tamanho do passo
 
-    Parameters:
-        func (callable): Objective function.
-        grad_func (callable): Gradient of the objective function.
-        x (array_like): Current point.
-        dx (array_like): Search direction.
-        alpha (float): Initial step size.
-        beta (float): Fraction by which step size is reduced.
-        c (float): Constant for sufficient decrease condition.
+    Parâmetros
+    ----------------------------------------
+    f : callable
+        Função objetivo (função custo).
+    xk : array
+        Ponto atual.
+    dk : array
+        Direção de descida (grad_T(f(x_{k})) . d_{k}  < 0).
+    sigma : float, opcional
+        Valor de sigma entre (0, 1) - constante de decréscimo. Padrão = 0.02
+    gamma : float, opcional
+        Valor de gamma entre (0, 1). Padrão = 0.5
 
-    Returns:
-        float: Step size satisfying Armijo condition.
+    Saída
+    ----------------------------------------
+    lambda : float
+        Valor de lambda que satisfaz a condição de Armijo.
+    f_x0 : float
+        Valor de f no ponto x_{k+1}.
     """
-    while func(x + alpha * dx) > func(x) + c * alpha * grad_func(x).dot(dx):
-        alpha *= beta
-    return alpha
+
+    # Começa constante lambda = 1
+
+    lambda_ = 1
+
+    # Direção de descida d = grad_{T}(f(x_{k})) . dk < 0
+    desc_direction = np.dot(nd.Gradient(f)(xk), dk)
+
+    f_x0 = f(xk + lambda_ * dk)
+
+    # Calcula a função em um ponto menor que x_k com passo inicial lambda = 1
+    # Condição de Armijo para determinar o tamanho do passo, diminuindo a função custo
+    while f_x0 > f(xk) + sigma * lambda_ * desc_direction:
+
+        lambda_ = gamma * lambda_
+        f_x0 = f(xk + lambda_ * dk)
+
+    # Retorna o passo lambda
+    return lambda_
 
 
-def gradient_descent(f, df, x, learning_rate=0.01, epsilon=1e-6, max_iter=100000):
+def gradient_descent(f, df, x, sigma=0.02, epsilon=1e-6, max_iter=100000):
     """
     Gradient Descent Optimization for a Univariate Function
 
@@ -34,7 +57,7 @@ def gradient_descent(f, df, x, learning_rate=0.01, epsilon=1e-6, max_iter=100000
         f (function): The objective function to minimize.
         df (function): The derivative of the objective function.
         x0 (float): Initial guess for the minimum.
-        learning_rate (float): The step size for each iteration.
+        sigma (float): Constante de descréscimo de Armijo
         epsilon (float): The convergence criterion.
         max_iter (int): Maximum number of iterations.
 
@@ -48,7 +71,9 @@ def gradient_descent(f, df, x, learning_rate=0.01, epsilon=1e-6, max_iter=100000
     for i in range(max_iter):
         gradient = df([x])
 
-        learning_rate = armijo(f, gradient, x, learning_rate)
+        # Linear Search with Armijo Condition
+        learning_rate = Armijo_Search(f, x, gradient, sigma)
+        # learning_rate = 0.01
         x_new = x - learning_rate * gradient
 
         if (abs(x_new - x) < 1e-06).all():
@@ -87,44 +112,19 @@ def himmelblau(x):
 
 if __name__ == "__main__":
 
-    # print("\n======================================")
-    # print("GRADIENT DESCENT - Himmelblau")
-
-    # begin_time = time.time()
-    # # generate gradient vector
-    # himmelblau_gradient = nd.Gradient(himmelblau)
-
-    # # Initial guess
-    # x = [0.0, 0.0]
-
-    # # Run gradient descent optimization
-    # x, iteration, trajectory = gradient_descent(himmelblau, himmelblau_gradient, x)
-    # min_value = himmelblau(x)
-    # print(himmelblau_gradient([x]))
-
-    # end_time = time.time()
-
-    # print(f"{iteration} iterations")
-    # print("Minimizer:", x)
-    # print("Minimum value:", min_value)
-    # print(f"Total Time Gradient Descent: {end_time-begin_time}")
-    # print(f"Average Iteration Time Gradient Descent: {(end_time-begin_time)/iteration}")
-
-    # # plot_gd_himmelblau(trajectory, x)
-
     print("\n======================================")
-    print("GRADIENT DESCENT - Rosenbrock")
+    print("GRADIENT DESCENT - Himmelblau")
 
     begin_time = time.time()
     # generate gradient vector
-    rosenbrock_gradient = nd.Gradient(rosenbrock)
+    himmelblau_gradient = nd.Gradient(himmelblau)
 
     # Initial guess
-    x = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    x = [0.0, 0.0]
 
     # Run gradient descent optimization
-    x, iteration, trajectory = gradient_descent(rosenbrock, rosenbrock_gradient, x, learning_rate=0.001)
-    min_value = rosenbrock(x)
+    x, iteration, trajectory = gradient_descent(himmelblau, himmelblau_gradient, x)
+    min_value = himmelblau(x)
 
     end_time = time.time()
 
@@ -134,9 +134,33 @@ if __name__ == "__main__":
     print(f"Total Time Gradient Descent: {end_time-begin_time}")
     print(f"Average Iteration Time Gradient Descent: {(end_time-begin_time)/iteration}")
 
-    x = np.linspace(-2, 2, 100)
-    y = np.linspace(-2, 2, 100)
-    X, Y = np.meshgrid(x, y)
+    # plot_gd_himmelblau(trajectory, x)
 
-    Z = rosenbrock([X, Y])
-    plot_gd_rosen(trajectory, x, X, Y, Z)
+    # print("\n======================================")
+    # print("GRADIENT DESCENT - Rosenbrock")
+
+    # begin_time = time.time()
+    # # generate gradient vector
+    # rosenbrock_gradient = nd.Gradient(rosenbrock)
+
+    # # Initial guess
+    # x = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+    # # Run gradient descent optimization
+    # x, iteration, trajectory = gradient_descent(rosenbrock, rosenbrock_gradient, x)
+    # min_value = rosenbrock(x)
+
+    # end_time = time.time()
+
+    # print(f"{iteration} iterations")
+    # print("Minimizer:", x)
+    # print("Minimum value:", min_value)
+    # print(f"Total Time Gradient Descent: {end_time-begin_time}")
+    # print(f"Average Iteration Time Gradient Descent: {(end_time-begin_time)/iteration}")
+
+    # x = np.linspace(-2, 2, 100)
+    # y = np.linspace(-2, 2, 100)
+    # X, Y = np.meshgrid(x, y)
+
+    # Z = rosenbrock([X, Y])
+    # plot_gd_rosen(trajectory, x, X, Y, Z)
